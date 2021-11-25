@@ -1,10 +1,11 @@
-group 'com.justwonderful.twitter_auth_nullsafety'
+group 'com.justwonderful.twitter_auth2'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.3.50'
+    ext.kotlin_version = '1.5.30'
     repositories {
         google()
+        jcenter()
         mavenCentral()
     }
 
@@ -17,7 +18,9 @@ buildscript {
 rootProject.allprojects {
     repositories {
         google()
+        jcenter()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
@@ -25,7 +28,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -47,4 +50,8 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.annotation:annotation:1.3.0'
+    implementation('com.twitter.sdk.android:twitter:3.3.0@aar') {
+        transitive = true
+    }
 }

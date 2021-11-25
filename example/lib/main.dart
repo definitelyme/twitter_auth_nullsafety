@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -16,34 +18,24 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  late TwitterAuth _twitterAuth2;
+  String? errorMessage;
+  String? username;
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    initializaPlugin();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await TwitterAuthNullsafety.platformVersion ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+  void initializaPlugin() async {
+    const options = AuthConfig(
+      apiToken: 'txQkBHs3tRTyyBmXGrudfn0MU',
+      apiTokenSecret: 'SwjP6KOZtZb7xawHG7vgVBaTRPHCF7M9Y7XABa0yGt7lAGrCIz',
+      callbackUrl: 'https://example.com/oauth/callback',
+    );
+    _twitterAuth2 = await TwitterAuth.initialize(options);
   }
 
   @override
@@ -54,7 +46,91 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('User Twitter ID: $userId'),
+              //
+              const SizedBox(height: 16),
+              //
+              Text('Twitter username: $username'),
+              //
+              const SizedBox(height: 16),
+              //
+              const Text('Check the logs for "AccessToken" & "Secret"'),
+              //
+              const SizedBox(height: 16),
+              //
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await _twitterAuth2.signOut();
+
+                    // final result = await _twitterAuth2.login(requestEmail: true);
+                    final result = await _twitterAuth2.login();
+
+                    switch (result.status) {
+                      case TwitterAuthStatus.loggedIn:
+                        print('Session token => ${result.session?.token}');
+                        print('Session secret => ${result.session?.secret}');
+                        print('\n\nAuth Session ==>-->> ${result.session}');
+
+                        setState(() {
+                          username = result.session?.user.username;
+                          userId = result.session?.user.userId;
+                        });
+                        break;
+                      case TwitterAuthStatus.inProgress:
+                        print('Login in progress, please wait!!');
+                        break;
+                      case TwitterAuthStatus.cancelled:
+                        print('Auth cancelled by user');
+                        break;
+                      case TwitterAuthStatus.failed:
+                        print(result);
+                        break;
+                    }
+                  } on TwitterAuthException catch (e) {
+                    print('Exception status ===> ${e.status}');
+                    print('Message body ===> ${e.message}');
+
+                    setState(() => errorMessage = e.message);
+                  }
+                },
+                child: const Text('Continue with Twitter'),
+              ),
+              //
+              if (userId != null)
+                Column(
+                  children: [
+                    const SizedBox(height: 36),
+                    //
+                    const Text('Get the current user session'),
+                    //
+                    const SizedBox(height: 8),
+                    //
+                    ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final result = await _twitterAuth2.currentSession;
+
+                          setState(() {
+                            username = '${result?.user.username} - (Session)';
+                            userId = '${result?.user.userId} - (Session)';
+                          });
+                        } on TwitterAuthException catch (e) {
+                          print('Exception status ===> ${e.status}');
+                          print('Message body ===> ${e.message}');
+
+                          setState(() => errorMessage = e.message);
+                        }
+                      },
+                      child: const Text('Get Current Session'),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
